@@ -6,7 +6,7 @@ import psycopg2
 import requests
 import json
 import pandas as pd
-from util import get_s3_connection, load_data_to_s3, get_redshift_connection
+from util import get_s3_connection, get_redshift_connection
 from dotenv import load_dotenv
 
 # Load environment variables from .env file
@@ -15,9 +15,17 @@ load_dotenv()
 def extract_raw_data(url, headers, querystring):
     response = requests.get(url=url, headers=headers, params=querystring)
     raw_data = response.json()
-    return raw_data
+    s3_hook = get_s3_connection()  # Connect to s3
+   
+   # Stage raw data to s3
+    s3_hook.load_string(json.dumps(raw_data), f"raw_jobs_data_{date.today()}.json", bucket_name='rawjobsdata')
 
 def transform_raw_data():
+    s3_hook = get_s3_connection()  # Connect to s3
+
+   #Get raw data from the s3 bucket
+    raw_data = json.loads(s3_hook.read_key(f"raw_jobs_data_{date.today()}.json", bucket_name='rawjobsdata'))
+
     transformed_data_list = []
     for i in raw_data["data"]:
         transformed_data_list.append({
@@ -36,17 +44,9 @@ def transform_raw_data():
     transformed_data_df = pd.DataFrame(transformed_data_list)
     # Save the DataFrame as a CSV file in memory
     csv_data = transformed_data_df.to_csv(index=False)
-    return csv_data
 
-def stage_raw_data():
-    # Stage the raw data in S3 bucket
-    load_data_to_s3('rawjobsdata', f"raw_jobs_data_{date.today()}.json", body=json.dumps(raw_data))
-
-def stage_transformed_data():
-    # Stage transformed data in S3 bucket
-
-    load_data_to_s3('transformedjobsdata', f"transformed_jobs_data_{date.today()}.csv", body=transformed_data)
-
+    # Stage transformed data to s3
+    s3_hook.load_string(csv_data, f"transformed_jobs_data_{date.today()}.csv", bucket_name='transformedjobsdata')
 
 def load_data_to_redshift():
     try:
@@ -90,6 +90,38 @@ def load_data_to_redshift():
         print("An error occurred:", str(e))
         
 
+
+
+
+
+    # API details
+url = "https://jsearch.p.rapidapi.com/search"
+querystring = {"query": "Data Engineer, Data Analyst", "page": "1", "num_pages": "1", "date_posted": "today"}
+headers = {
+    "X-RapidAPI-Key": os.environ['rapidAPI-key'],
+    "X-RapidAPI-Host": "jsearch.p.rapidapi.com"
+}
+# Establish S3 Connection
+region = "ca-central-1"
+access_key_id = 'AKIAYYI7KKEMACJKL4E5'
+secret_access_key = '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'
+
+# Establish Redshift Connection
+redshift_host = 'redshift-cluster-2.cfz4dilotntk.ca-central-1.redshift.amazonaws.com'
+redshift_port = 5439
+redshift_database = 'dev'
+redshift_user = 'awsuser'
+redshift_password = 'Learn1n9'
+
+raw_data = extract_raw_data(url, headers, querystring)
+
+transformed_data = transform_raw_data()
+
+stage_raw_data()
+
+stage_transformed_data()
+
+load_data_to_redshift()
 
 
    
