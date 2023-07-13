@@ -95,6 +95,6 @@ def load_data_to_redshift():
     except psycopg2.Error as e:
         logging.error("Error connecting to Redshift:", str(e))
     except Exception as e:
-        logging.exception("An error occurred:", str(e))
+        logging.error("An error occurred:", str(e))
         
 
