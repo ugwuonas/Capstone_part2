@@ -1,26 +1,32 @@
-import csv
 import os
-import boto3
+import logging
 from datetime import date
-import psycopg2
-import requests
 import json
 import pandas as pd
-from util import get_s3_connection, get_redshift_connection
+import psycopg2
+import requests
 from dotenv import load_dotenv
+from util import get_s3_connection, get_redshift_connection
+
 
 # Load environment variables from .env file
 load_dotenv()
 
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+
+
 def extract_raw_data(url, headers, querystring):
     response = requests.get(url=url, headers=headers, params=querystring)
     raw_data = response.json()
+
     s3_hook = get_s3_connection()  # Connect to s3
-   
+
    # Stage raw data to s3
     s3_hook.load_string(json.dumps(raw_data), f"raw_jobs_data_{date.today()}.json", bucket_name='rawjobsdata')
 
-def transform_raw_data():
+
+def transform_data():
     s3_hook = get_s3_connection()  # Connect to s3
 
    #Get raw data from the s3 bucket
@@ -42,15 +48,17 @@ def transform_raw_data():
         })
 
     transformed_data_df = pd.DataFrame(transformed_data_list)
+    
     # Save the DataFrame as a CSV file in memory
     csv_data = transformed_data_df.to_csv(index=False)
 
-    # Stage transformed data to s3
+   # Stage csv data to s3
     s3_hook.load_string(csv_data, f"transformed_jobs_data_{date.today()}.csv", bucket_name='transformedjobsdata')
+
 
 def load_data_to_redshift():
     try:
-        # Load data to Redshift
+        # Connect to redshift
         redshift_conn = get_redshift_connection()
         redshift_cur = redshift_conn.cursor()
         
@@ -82,46 +90,11 @@ def load_data_to_redshift():
 
         redshift_conn.commit()
         redshift_conn.close()
-        print("Data loaded to Redshift successfully.")
+        logging.info("Data loaded to Redshift successfully.")
         
     except psycopg2.Error as e:
-        print("Error connecting to Redshift:", str(e))
+        logging.error("Error connecting to Redshift:", str(e))
     except Exception as e:
-        print("An error occurred:", str(e))
+        logging.exception("An error occurred:", str(e))
         
 
-
-
-
-
-    # API details
-url = "https://jsearch.p.rapidapi.com/search"
-querystring = {"query": "Data Engineer, Data Analyst", "page": "1", "num_pages": "1", "date_posted": "today"}
-headers = {
-    "X-RapidAPI-Key": os.environ['rapidAPI-key'],
-    "X-RapidAPI-Host": "jsearch.p.rapidapi.com"
-}
-# Establish S3 Connection
-region = "ca-central-1"
-access_key_id = 'AKIAYYI7KKEMACJKL4E5'
-secret_access_key = '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'
-
-# Establish Redshift Connection
-redshift_host = 'redshift-cluster-2.cfz4dilotntk.ca-central-1.redshift.amazonaws.com'
-redshift_port = 5439
-redshift_database = 'dev'
-redshift_user = 'awsuser'
-redshift_password = 'Learn1n9'
-
-raw_data = extract_raw_data(url, headers, querystring)
-
-transformed_data = transform_raw_data()
-
-stage_raw_data()
-
-stage_transformed_data()
-
-load_data_to_redshift()
-
-
-   
