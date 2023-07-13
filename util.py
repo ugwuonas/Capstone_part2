@@ -1,10 +1,14 @@
-import boto3
 import os
-import psycopg2
+import logging
 from dotenv import load_dotenv
+import boto3
+import psycopg2
 
 # Load environment variables from .env file
 load_dotenv()
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
 
 def get_s3_connection():
     try:
@@ -15,10 +19,10 @@ def get_s3_connection():
             aws_access_key_id = os.environ['aws_access_key_id'],
             aws_secret_access_key= os.environ['aws_secret_access_key']
         )
-        print("Connected to S3 successfully")
+        logging.info("Connected to S3 successfully")
         return s3
     except Exception as e:
-        print(f"Error connecting to S3: {e}")
+        logging.error(f"Error connecting to S3: {e}")
         return None
 
 
@@ -32,24 +36,14 @@ def get_redshift_connection():
             user= os.environ['redshift_user'],
             password= os.environ['redshift_password']
         )
-        print("Connected to Redshift successfully")
+        logging.info("Connected to Redshift successfully")
         return conn
     
     except Exception as e:
-        print(f"Error connecting to Redshift: {e}")
+        logging.error(f"Error connecting to Redshift: {e}")
         return None
 
 
-def load_data_to_s3(bucket, key, body):
-    s3_client = get_s3_connection()
-
-    s3 = boto3.client('s3')
-    try:
-        s3.put_object(Bucket=bucket, Key=key, Body=body)
-        print(f"Data uploaded successfully to S3 bucket: {bucket} as object: {key}")
-    except Exception as e:
-        print(f"Error uploading data to S3 bucket: {bucket}")
-        print(e)
 
 
 
