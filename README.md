@@ -24,15 +24,15 @@ Before using the data pipeline, ensure you have the following prerequisites:
 To use the data pipeline, follow these steps:
 
 1. Set up the required environment variables: 
-   - `aws_access_key_id`: Access key ID for AWS.
-   - `aws_secret_access_key`: Secret access key for AWS.
-   - `redshift_user`: Username for connecting to Amazon Redshift.
-   - `redshift_password`: Password for connecting to Amazon Redshift.
-   - `rapidAPI-key`: API key for accessing the job posting API.
+   - *aws_access_key_id*: Access key ID for AWS.
+   - *aws_secret_access_key*: Secret access key for AWS.
+   - *redshift_user*: Username for connecting to Amazon Redshift.
+   - *redshift_password*: Password for connecting to Amazon Redshift.
+   - *rapidAPI-key*: API key for accessing the job posting API.
 
 2. Install the necessary dependencies: 
    - Make sure you have Python installed on your system.
-   - Use `pip` or `conda` to install the required packages.
+   - Use *pip* to install the required packages.
 
 3. Customize the pipeline parameters (e.g., API URL, query parameters) in `main.py` if needed.
 
@@ -44,11 +44,11 @@ To use the data pipeline, follow these steps:
 ### Notes
 
 - The data extraction step fetches job posting data from the specified API based on the provided query parameters.
-- The extracted raw data is stored in an S3 bucket named `rawjobsdata` in JSON format.
+- The extracted raw data is stored in an S3 bucket named *rawjobsdata* in JSON format.
 - The transformation step processes the raw data and creates a transformed dataset containing specific columns.
-- The transformed data is saved in an S3 bucket named `transformedjobsdata` in CSV format.
-- The final step loads the transformed data from the S3 bucket into an Amazon Redshift table named `transformed_jobs`.
-- Logging is configured to capture information and errors during the execution of the pipeline. The logging level is set to `INFO` to provide general progress information.
+- The transformed data is saved in an S3 bucket named *transformedjobsdata* in CSV format.
+- The final step loads the transformed data from the S3 bucket into an Amazon Redshift table named *transformed_jobs*.
+- Logging is configured to capture information and errors during the execution of the pipeline. The logging level is set to *INFO* to provide general progress information.
   
 ## Troubleshooting
 If you encounter any issues while running the data pipeline, consider the following troubleshooting steps:
