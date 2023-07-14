@@ -8,6 +8,8 @@ This repository contains code for a data pipeline that extracts job posting data
 - `util.py`: Provides utility functions for establishing connections to S3 and Redshift. It also configures logging to capture relevant information and errors during the execution of the pipeline.
 - `main.py`: Defines an Apache Airflow DAG (Directed Acyclic Graph) that orchestrates the execution of the data pipeline. It schedules the pipeline to run daily and sets up the dependencies between tasks.
 - `README.md`: This file, provides an overview of the repository and its contents.
+- `pipeline_architecture.png`: A pipeline architecture diagram illustrating the flow of data and the components involved in the pipeline.
+
   
 ## Prerequisites
 Before using the data pipeline, ensure you have the following prerequisites:
