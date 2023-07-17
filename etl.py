@@ -82,9 +82,9 @@ def load_to_redshift():
         copy_query = f"""
             COPY transformed_jobs
             FROM 's3://transformed--jobs--data/transformed_jobs_data_{date.today()}.csv'
-            CREDENTIALS 'aws_access_key_id={os.environ['aws_access_key_id']};aws_secret_access_key={os.environ['aws_secret_access_key']}'
+            CREDENTIALS 'aws_access_key_id={os.getenv('aws_access_key_id')};aws_secret_access_key={os.getenv("aws_secret_access_key")}'
             FORMAT AS CSV
-            IGNOREHEADER 1
+v            IGNOREHEADER 1
         """
         redshift_cur.execute(copy_query)
 
@@ -97,4 +97,4 @@ def load_to_redshift():
     except Exception as e:
         logging.exception("An error occurred:", str(e))
         
-
+''
