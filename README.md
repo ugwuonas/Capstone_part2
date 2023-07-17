@@ -44,9 +44,9 @@ To use the data pipeline, follow these steps:
 ### Notes
 
 - The data extraction step fetches job posting data from the specified API based on the provided query parameters.
-- The extracted raw data is stored in an S3 bucket named *rawjobsdata* in JSON format.
+- The extracted raw data is stored in an S3 bucket named *raw--jobs-data* in JSON format.
 - The transformation step processes the raw data and creates a transformed dataset containing specific columns.
-- The transformed data is saved in an S3 bucket named *transformedjobsdata* in CSV format.
+- The transformed data is saved in an S3 bucket named *transformed--jobs-data* in CSV format.
 - The final step loads the transformed data from the S3 bucket into an Amazon Redshift table named *transformed_jobs*.
 - Logging is configured to capture information and errors during the execution of the pipeline. The logging level is set to *INFO* to provide general progress information.
   
