@@ -1,36 +1,35 @@
 import os
+import boto3
 import logging
 from datetime import date
 import json
 import pandas as pd
 import psycopg2
 import requests
-from dotenv import load_dotenv
 from util import get_s3_connection, get_redshift_connection
 
-
-# Load environment variables from .env file
-load_dotenv()
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 
 
-def extract_raw_data(url, headers, querystring):
+def extract_data(url, headers, querystring):
     response = requests.get(url=url, headers=headers, params=querystring)
     raw_data = response.json()
 
-    s3_hook = get_s3_connection()  # Connect to s3
-
+    s3 = get_s3_connection()  # Connect to s3
+    
    # Stage raw data to s3
-    s3_hook.load_string(json.dumps(raw_data), f"raw_jobs_data_{date.today()}.json", bucket_name='rawjobsdata')
+    s3.put_object(Body=json.dumps(raw_data), Key=f"raw_jobs_data_{date.today()}.json", Bucket='raw--jobs--data')
+    logging.info("staged raw data to S3 successfully")
 
 
 def transform_data():
-    s3_hook = get_s3_connection()  # Connect to s3
+    s3 = get_s3_connection()  # Connect to s3
 
    #Get raw data from the s3 bucket
-    raw_data = json.loads(s3_hook.read_key(f"raw_jobs_data_{date.today()}.json", bucket_name='rawjobsdata'))
+    raw_data = s3.get_object(Key=f"raw_jobs_data_{date.today()}.json", Bucket='raw--jobs--data')
+    raw_data = json.loads(raw_data['Body'].read())
 
     transformed_data_list = []
     for i in raw_data["data"]:
@@ -51,12 +50,13 @@ def transform_data():
     
     # Save the DataFrame as a CSV file in memory
     csv_data = transformed_data_df.to_csv(index=False)
-
+    
    # Stage csv data to s3
-    s3_hook.load_string(csv_data, f"transformed_jobs_data_{date.today()}.csv", bucket_name='transformedjobsdata')
+    s3.put_object(Body=csv_data, Key=f"transformed_jobs_data_{date.today()}.csv", Bucket='transformed--jobs--data')
+    logging.info("staged transformed data to S3 successfully")
 
 
-def load_data_to_redshift():
+def load_to_redshift():
     try:
         # Connect to redshift
         redshift_conn = get_redshift_connection()
@@ -81,7 +81,7 @@ def load_data_to_redshift():
 
         copy_query = f"""
             COPY transformed_jobs
-            FROM 's3://transformedjobsdata/transformed_jobs_data_{date.today()}.csv'
+            FROM 's3://transformed--jobs--data/transformed_jobs_data_{date.today()}.csv'
             CREDENTIALS 'aws_access_key_id={os.environ['aws_access_key_id']};aws_secret_access_key={os.environ['aws_secret_access_key']}'
             FORMAT AS CSV
             IGNOREHEADER 1
@@ -95,6 +95,6 @@ def load_data_to_redshift():
     except psycopg2.Error as e:
         logging.error("Error connecting to Redshift:", str(e))
     except Exception as e:
-        logging.error("An error occurred:", str(e))
+        logging.exception("An error occurred:", str(e))
         
 
